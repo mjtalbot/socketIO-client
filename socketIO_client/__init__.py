@@ -47,6 +47,7 @@ class EngineIO(LoggingMixin):
         self._log_name = self._url
         self._opened = False
         self._wants_to_close = False
+        self._buffer = []
         atexit.register(self._close)
 
         if Namespace:
@@ -72,8 +73,12 @@ class EngineIO(LoggingMixin):
             transport = XHR_PollingTransport(
                 self._http_session, self._is_secure, self._url)
             try:
+                packet_iterator = transport.recv_packet()
                 engineIO_packet_type, engineIO_packet_data = next(
-                    transport.recv_packet())
+                    packet_iterator
+                )
+                for remaining_packets in packet_iterator:
+                    self._buffer.append(remaining_packets)
                 break
             except (TimeoutError, ConnectionError) as e:
                 if not self._wait_for_connection:
@@ -273,6 +278,12 @@ class EngineIO(LoggingMixin):
         return self._wants_to_close
 
     def _process_packets(self):
+        while len(self._buffer) > 0:
+            try:
+                self._process_packet(self._buffer.pop(0))
+            except PacketError as e:
+                self._warn('[packet error] %s', e)
+
         for engineIO_packet in self._transport.recv_packet():
             try:
                 self._process_packet(engineIO_packet)
