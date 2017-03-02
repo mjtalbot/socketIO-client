@@ -16,7 +16,7 @@ from .transports import (
 
 
 __all__ = 'SocketIO', 'SocketIONamespace'
-__version__ = '0.7.2'
+__version__ = '0.7.3-max'
 BaseNamespace = SocketIONamespace
 LoggingNamespace = LoggingSocketIONamespace
 
@@ -243,7 +243,7 @@ class EngineIO(LoggingMixin):
     def wait(self, seconds=None, **kw):
         'Wait in a loop and react to events as defined in the namespaces'
         # Use ping/pong to unblock recv for polling transport
-        self._heartbeat_thread.hurry()
+        # self._heartbeat_thread.hurry()
         # Use timeout to unblock recv for websocket transport
         self._transport.set_timeout(seconds=1)
         # Listen
